@@ -30,13 +30,17 @@ struct HomeView: View {
                 
                 List {
                     ForEach(workouts) { workout in
-                        VStack(alignment: .leading) {
-                            Text(workout.name)
-                                .font(.headline)
-                            Text("Dias: \(workout.daysOfWeekAsString().joined(separator: ", "))")
-                                .font(.subheadline)
+                        
+                        NavigationLink(destination: WorkoutDetailView(workout: workout)) {
+                            VStack(alignment: .leading) {
+                                Text(workout.name)
+                                    .font(.headline)
+                                Text("Dias: \(workout.daysOfWeekAsString().joined(separator: ", "))")
+                                    .font(.subheadline)
+                            }
+                            .padding(.vertical, 20)
                         }
-                        .padding(.vertical, 20)
+                        
                     }
                     .onDelete(perform: deleteWorkout)
                 }
