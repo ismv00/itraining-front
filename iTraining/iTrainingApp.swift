@@ -9,9 +9,12 @@ import SwiftUI
 
 @main
 struct iTrainingApp: App {
+    
+    @StateObject private var userSession = UserSession()
     var body: some Scene {
         WindowGroup {
             ContentView()
+                .environmentObject(userSession)
         }
     }
 }

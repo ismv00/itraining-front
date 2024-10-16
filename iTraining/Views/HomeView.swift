@@ -8,55 +8,110 @@
 import SwiftUI
 
 struct HomeView: View {
-    @State private var navigateToLogin = false
+    @EnvironmentObject var userSession : UserSession
+    @State private var NavigateToLogin = false
+    @State private var workouts: [Workout] = []
+    let userId : Int
+    let token: String
+    let userName: String
+    @State private var showingCreateWorkoutView = false
+    
+    let signupService = SignupService()
+    let workoutService = WorkoutService()
     
     var body: some View {
         NavigationView {
-            ZStack {
-                Image("background")
-                    .resizable()
-                    .scaledToFill()
-                    .edgesIgnoringSafeArea(.all)
+            VStack {
+                Text("Olá, \(userSession.userName)")
+                    .font(.title)
+                    .foregroundStyle(.blue)
+                    .padding()
                 
-                VStack {
-                    
-                    Button(action: {
-                        handleLogout()
-                    }) {
-                        Text("Logout")
-                            .foregroundStyle(.red)
-                            .padding()
-                            .background(Color.white.opacity(0.8))
-                            .cornerRadius(10)
+                
+                List(workouts) { workout in
+                    VStack(alignment: .leading) {
+                        Text(workout.name)
+                            .font(.headline)
+                        Text("Dias: \(workout.daysOfWeekAsString().joined(separator: ", "))")
+                            .font(.subheadline)
                     }
-                    .padding(.top, 40)
+                    .padding(.vertical, 20)
+                }
+                .onAppear {
+                    loadWorkouts()
+                }
+                
+                Button(action: {
+                    showingCreateWorkoutView.toggle()
+                }) {
+                    HStack {
+                        Image(systemName: "plus")
+                        Text("Add Workout")
+                    }
+                    .frame(maxWidth: .infinity)
+                    .padding()
+                    .background(Color.blue)
+                    .foregroundStyle(.white)
+                    .cornerRadius(10)
+                    .padding(.horizontal, 60)
+                }
+                
+                //Button de logout
+                Button(action: {
+                    handleLogout()
+                }) {
+                    HStack {
+                        Image(systemName: "arrowshape.turn.up.left")
+                        Text("Logout")
+                    }
+                    .frame(maxWidth: .infinity)
+                    .padding()
+                    .background(Color.red)
+                    .foregroundStyle(.white)
+                    .cornerRadius(10)
+                    .padding(.horizontal, 60)
                     
-                    Spacer()
-                    
-                    Text("Welcome to iTrainning!")
-                        .font(.largeTitle)
-                        .foregroundStyle(.white)
-                        .bold()
-                    
-                    Spacer()
                 }
             }
-            .navigationBarBackButtonHidden(true)
             .navigationTitle("")
             .overlay(
-                NavigationLink(destination: LoginView(), isActive: $navigateToLogin) {
+                NavigationLink(destination: LoginView(), isActive: $NavigateToLogin) {
                     EmptyView()
                 }
             )
+            .sheet(isPresented: $showingCreateWorkoutView) {
+                CreateWorkoutView {
+                    loadWorkouts()
+                }
+                .environmentObject(userSession)
+                        }
         }
-  
     }
-    func handleLogout() {
-            //
-        navigateToLogin = true
+    
+    func loadWorkouts() {
+        workoutService.fetchWorkout(userId: userSession.userId, token: userSession.token) {result in
+            DispatchQueue.main.async {
+                switch result {
+                case .success(let fetchedWorkouts) :
+                    workouts = fetchedWorkouts
+                case .failure(let error):
+                    print("Error fetching workouts: \(error)")
+                }
+            }
         }
+    }
+    
+    func handleLogout() {
+        workoutService.logout()
+        NavigateToLogin = true
+    }
 }
 
+
+    
+
 #Preview {
-    HomeView()
+    HomeView(userId: 1, token: "sampleToken", userName: "John Doe")
+        .environmentObject(UserSession())
 }
+

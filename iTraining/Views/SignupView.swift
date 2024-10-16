@@ -8,6 +8,7 @@
 import SwiftUI
 
 struct SignupView: View {
+    @EnvironmentObject var userSession : UserSession
     @State private var navigateToHome = false // Controle de navegação para HomeView
     
     @State private var name: String = ""
@@ -15,6 +16,10 @@ struct SignupView: View {
     @State private var password: String = ""
     @State private var confirmPassword: String = ""
     @State private var errorMessage: String = ""
+    
+ //   @State private var userId: Int = 0
+  //  @State private var token: String = ""
+    
     
     let sigupService = SignupService()
     
@@ -49,6 +54,9 @@ struct SignupView: View {
                     .padding(.horizontal, 60)
                     .padding(.bottom, 15)
                     .foregroundStyle(.black)
+                    .autocapitalization(.none)
+                    .keyboardType(.emailAddress)
+                    .disableAutocorrection(true)
                 
                 SecureField("Password", text: $password)
                     .padding()
@@ -100,7 +108,7 @@ struct SignupView: View {
         .navigationBarBackButtonHidden(true) // Para esconder o botão de voltar
         .navigationTitle("") // Esconder o título da navegação
         .overlay(
-            NavigationLink(destination: HomeView(), isActive: $navigateToHome) {
+            NavigationLink(destination: HomeView(userId: userSession.userId, token: userSession.token, userName: userSession.userName).environmentObject(userSession) , isActive: $navigateToHome) {
                 EmptyView()  // Usado para navegar automaticamente
             }
         )
@@ -112,15 +120,17 @@ struct SignupView: View {
             return
         }
         
-        sigupService.signup(email: email, password: password) { result in
-            switch result {
-            case .success:
-                print("Signup successful!")
-                // Definindo true para `navigateToHome`, redirecionando para a HomeView
-                navigateToHome = true
-                
-            case .failure(let error):
-                errorMessage = error.localizedDescription
+        sigupService.signup(name: name, email: email, password: password) { result in
+            DispatchQueue.main.async {
+                switch result {
+                case .success:
+                    print("Signup successful!")
+                    // Definindo true para `navigateToHome`, redirecionando para a HomeView
+                    navigateToHome = true
+                    
+                case .failure(let error):
+                    errorMessage = error.localizedDescription
+                }
             }
         }
     }

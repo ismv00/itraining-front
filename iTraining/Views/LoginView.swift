@@ -8,10 +8,17 @@
 import SwiftUI
 
 struct LoginView: View {
+    @StateObject var userSession = UserSession()
+    
     @State private var email: String = ""
     @State private var password: String = ""
     @State private var errorMessage: String = ""
-    @State private var isLoggedIn: Bool = false
+    @State private var navigateToHome = false
+    
+    @State private var userId: Int = 0
+    @State private var token: String = ""
+    @State private var userName: String = ""
+    
     
     let loginService = LoginService()
     
@@ -25,7 +32,7 @@ struct LoginView: View {
            VStack {
                Spacer()
                
-               Text("iTraining")
+               Text("Login")
                    .font(.largeTitle)
                    .foregroundColor(.white)
                    .bold()
@@ -38,6 +45,9 @@ struct LoginView: View {
                    .padding(.horizontal, 60)
                    .padding(.bottom, 15)
                    .foregroundColor(.black)
+                   .autocapitalization(.none)
+                   .keyboardType(.emailAddress)
+                   .disableAutocorrection(true)
                
                SecureField("Password", text: $password)
                    .padding()
@@ -49,7 +59,7 @@ struct LoginView: View {
                Button(action: {
                    handleLogin()
                }) {
-                   Text("Login")
+                   Text("Log In")
                        .frame(maxWidth: .infinity)
                        .padding()
                        .background(Color.blue)
@@ -77,22 +87,40 @@ struct LoginView: View {
                    }
                }
                .padding(.bottom, 30)
-               
-               NavigationLink(destination: HomeView(), isActive: $isLoggedIn) {
-                   EmptyView()
-               }
            }
         }
+       .navigationBarBackButtonHidden(true)
+       .navigationTitle("")
+       .overlay(
+        NavigationLink(destination: HomeView(userId: userSession.userId, token: userSession.token, userName: userSession.userName)
+            .environmentObject(userSession)
+                        ,isActive: $navigateToHome) {
+            EmptyView()
+        }
+       )
     }
     
     func handleLogin() {
         loginService.login(email: email, password: password) { result in
             switch result {
-            case .success:
-                print("Login successful!")
-                isLoggedIn = true
-            case .failure(let error):
-                errorMessage = error.localizedDescription
+            case .success(let (token, userId, userName)):
+                print("Login successful Token: \(token)")
+                
+                DispatchQueue.main.async {
+                    userSession.token = token
+                    userSession.userId = userId
+                    userSession.userName = userName
+                    navigateToHome = true
+                }
+ 
+            case .failure(let error) :
+                DispatchQueue.main.async {
+                    if let APIError = error as? APIError {
+                        errorMessage = APIError.error
+                    } else {
+                        errorMessage = "Ocorreu um erro inesperado. Tente novamente."
+                    }
+                }
             }
         }
     }
