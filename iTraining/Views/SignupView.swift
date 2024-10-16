@@ -17,9 +17,6 @@ struct SignupView: View {
     @State private var confirmPassword: String = ""
     @State private var errorMessage: String = ""
     
- //   @State private var userId: Int = 0
-  //  @State private var token: String = ""
-    
     
     let sigupService = SignupService()
     

@@ -89,4 +89,31 @@ class WorkoutService {
     func logout() {
         UserDefaults.standard.removeObject(forKey: "authToken")
     }
+    
+    func deleteWorkout(userId: Int, workoutId: Int, token: String, completion: @escaping(Result <Void, Error>) -> Void) {
+        guard let url = URL(string: "http://localhost:3000/workouts/\(userId)/\(workoutId)") else {
+            completion(.failure(NSError(domain: "Invalid URL", code: 400, userInfo: nil)))
+            return
+        }
+        
+        var request = URLRequest(url: url)
+        request.httpMethod = "DELETE"
+        request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+        
+        let task = URLSession.shared.dataTask(with: request) { data, response, error in
+            if let error = error {
+                completion(.failure(error))
+                return
+            }
+            
+            guard let httpResponse = response as? HTTPURLResponse, (200...299).contains(httpResponse.statusCode) else {
+                completion(.failure(NSError(domain: "Invalid Response", code: 400, userInfo: nil)))
+                return
+            }
+            
+            completion(.success(()))
+        }
+        
+        task.resume()
+    }
 }

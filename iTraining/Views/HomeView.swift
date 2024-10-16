@@ -28,14 +28,17 @@ struct HomeView: View {
                     .padding()
                 
                 
-                List(workouts) { workout in
-                    VStack(alignment: .leading) {
-                        Text(workout.name)
-                            .font(.headline)
-                        Text("Dias: \(workout.daysOfWeekAsString().joined(separator: ", "))")
-                            .font(.subheadline)
+                List {
+                    ForEach(workouts) { workout in
+                        VStack(alignment: .leading) {
+                            Text(workout.name)
+                                .font(.headline)
+                            Text("Dias: \(workout.daysOfWeekAsString().joined(separator: ", "))")
+                                .font(.subheadline)
+                        }
+                        .padding(.vertical, 20)
                     }
-                    .padding(.vertical, 20)
+                    .onDelete(perform: deleteWorkout)
                 }
                 .onAppear {
                     loadWorkouts()
@@ -46,7 +49,7 @@ struct HomeView: View {
                 }) {
                     HStack {
                         Image(systemName: "plus")
-                        Text("Add Workout")
+                        Text("Criar Treino")
                     }
                     .frame(maxWidth: .infinity)
                     .padding()
@@ -62,7 +65,7 @@ struct HomeView: View {
                 }) {
                     HStack {
                         Image(systemName: "arrowshape.turn.up.left")
-                        Text("Logout")
+                        Text("Sair")
                     }
                     .frame(maxWidth: .infinity)
                     .padding()
@@ -96,6 +99,23 @@ struct HomeView: View {
                     workouts = fetchedWorkouts
                 case .failure(let error):
                     print("Error fetching workouts: \(error)")
+                }
+            }
+        }
+    }
+    
+    func deleteWorkout(at offsets: IndexSet) {
+        guard let index = offsets.first else { return }
+        
+        let workout = workouts[index]
+        
+        workoutService.deleteWorkout(userId: userSession.userId, workoutId: workout.id, token: userSession.token) { result in
+            DispatchQueue.main.async {
+                switch result {
+                case .success:
+                    workouts.remove(atOffsets: offsets)
+                case .failure(let error):
+                    print("Error deleting Workout: \(error)")
                 }
             }
         }

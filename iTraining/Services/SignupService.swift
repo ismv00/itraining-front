@@ -7,10 +7,11 @@
 
 import Foundation
 
+
 struct SignupService {
-    func signup(name: String, email: String, password: String, completion: @escaping(Result<Void, Error>) -> Void) {
+    func signup(name: String, email: String, password: String, completion: @escaping(Result<Void, APIError>) -> Void) {
         guard let url = URL(string: "http://localhost:3000/users/register") else {
-            completion(.failure(NSError(domain: "Invalid URL", code: 400, userInfo: nil)))
+            completion(.failure(APIError(error: "Invalid URL")))
             return
         }
         
@@ -28,12 +29,21 @@ struct SignupService {
         
         let task = URLSession.shared.dataTask(with: request) { data, response, error in
             if let error = error {
-                completion(.failure(error))
+                completion(.failure(APIError(error: error.localizedDescription)))
                 return
             }
             
-            guard let httpResponse = response as? HTTPURLResponse, (200...299).contains(httpResponse.statusCode) else {
-                completion(.failure(NSError(domain: "Invalid response", code: 400, userInfo: nil)))
+            guard let httpResponse = response as? HTTPURLResponse else {
+                completion(.failure(APIError(error: "Invalid Response.")))
+                return
+            }
+            
+            guard (200...299).contains(httpResponse.statusCode) else {
+                if let data = data, let errorResponse = try? JSONDecoder().decode(APIError.self, from: data) {
+                    completion(.failure(errorResponse))
+                } else {
+                    completion(.failure(APIError(error: "Unexpected server errror.")))
+                }
                 return
             }
             
