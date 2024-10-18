@@ -47,9 +47,7 @@ struct WorkoutDetailView: View {
             }
         }
         .sheet(isPresented: $showingAddExerciseView) {
-            AddExerciseView(workout: workout) {
-                loadExercises()
-            }
+            AddExerciseView()
         }
     }
         
